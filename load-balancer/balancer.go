@@ -13,7 +13,7 @@ func main() {
 	}
 	l, err := net.Listen("tcp4", ":8000")
 	if err != nil {
-		fmt.Errorf("listener failed %v", err)
+		fmt.Printf("listener failed %v", err)
 	}
 	s.Serve(l)
 }
