@@ -18,17 +18,18 @@ func NewRoundRobin() *roundRobin {
 
 func (r *roundRobin) reverseProxy(w http.ResponseWriter, req *http.Request) error {
 	counter := atomic.AddUint64(&r.counter, 1)
-	fmt.Printf("counter in req %v\n", counter)
 	url := URLs[counter%uint64(len(URLs))]
 	completeUrl := fmt.Sprintf("%s%s", url, req.RequestURI)
 	proxyReq, err := http.NewRequest(req.Method, completeUrl, req.Body)
 	if err != nil {
+		r.serverError(w, err.Error())
 		return errors.New("failed to create request")
 	}
 	proxyReq.Header = req.Header
 	client := &http.Client{}
 	resp, respErr := client.Do(proxyReq)
 	if respErr != nil {
+		r.serverError(w, respErr.Error())
 		fmt.Printf("response error %s\n", respErr)
 		return respErr
 	}
@@ -47,4 +48,9 @@ func (r roundRobin) RoundRobinHandler() func(w http.ResponseWriter, req *http.Re
 func (r *roundRobin) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	r.reverseProxy(w, req)
+}
+
+func (r *roundRobin) serverError(w http.ResponseWriter, err string) {
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte(err))
 }
