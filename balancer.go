@@ -1,6 +1,7 @@
 package main
 
 import (
+	lb "balanceload/load-balancer"
 	rr "balanceload/load-balancer/balance-algorithm/round-robin"
 	"fmt"
 	"net"
@@ -8,6 +9,7 @@ import (
 )
 
 func main() {
+	lb.ParseConfig()
 	s := &http.Server{
 		Handler: rr.NewRoundRobin(),
 	}
