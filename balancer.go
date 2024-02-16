@@ -3,14 +3,21 @@ package main
 import (
 	lb "balanceload/load-balancer"
 	rr "balanceload/load-balancer/balance-algorithm/round-robin"
+	wrr "balanceload/load-balancer/balance-algorithm/weight-round-robin"
 	"fmt"
 	"net"
 	"net/http"
 )
 
 func main() {
+	var handler http.Handler
+	if lb.ParseConfig().AlgoType == "w-round-robin" {
+		handler = wrr.NewWeightRoundRobin(lb.ParseConfig())
+	} else if lb.ParseConfig().AlgoType == "round-robin" {
+		handler = rr.NewRoundRobin(lb.ParseConfig())
+	}
 	s := &http.Server{
-		Handler: rr.NewRoundRobin(lb.ParseConfig()),
+		Handler: handler,
 	}
 	l, err := net.Listen("tcp4", ":8000")
 	if err != nil {

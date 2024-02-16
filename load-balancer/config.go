@@ -8,14 +8,12 @@ import (
 type Backend struct {
 	URL    string `json:"url"`
 	Health string `json:"health"`
+	Weight uint   `json:"weight"`
 }
 
 type Config struct {
 	AlgoType string `json:"algoType"`
-	Backends []struct {
-		URL    string `json:"url"`
-		Health string `json:"health"`
-	} `json:"backends"`
+	Backends []Backend
 }
 
 func ParseConfig() *Config {
