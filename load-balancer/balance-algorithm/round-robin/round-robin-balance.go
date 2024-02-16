@@ -1,6 +1,7 @@
 package loadbalanceroundrobin
 
 import (
+	lb "balanceload/load-balancer"
 	"errors"
 	"fmt"
 	"io"
@@ -10,15 +11,22 @@ import (
 
 type roundRobin struct {
 	counter uint64
+	urls    []string
 }
 
-func NewRoundRobin() *roundRobin {
-	return &roundRobin{}
+func NewRoundRobin(config *lb.Config) *roundRobin {
+	var urls []string
+	for _, b := range config.Backends {
+		urls = append(urls, b.URL)
+	}
+	return &roundRobin{
+		urls: urls,
+	}
 }
 
 func (r *roundRobin) reverseProxy(w http.ResponseWriter, req *http.Request) error {
 	counter := atomic.AddUint64(&r.counter, 1)
-	url := URLs[counter%uint64(len(URLs))]
+	url := r.urls[counter%uint64(len(r.urls))]
 	completeUrl := fmt.Sprintf("%s%s", url, req.RequestURI)
 	proxyReq, err := http.NewRequest(req.Method, completeUrl, req.Body)
 	if err != nil {

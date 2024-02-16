@@ -9,9 +9,8 @@ import (
 )
 
 func main() {
-	lb.ParseConfig()
 	s := &http.Server{
-		Handler: rr.NewRoundRobin(),
+		Handler: rr.NewRoundRobin(lb.ParseConfig()),
 	}
 	l, err := net.Listen("tcp4", ":8000")
 	if err != nil {
