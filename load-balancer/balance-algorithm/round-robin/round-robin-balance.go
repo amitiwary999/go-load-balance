@@ -47,12 +47,6 @@ func (r *roundRobin) reverseProxy(w http.ResponseWriter, req *http.Request) erro
 	return nil
 }
 
-func (r roundRobin) RoundRobinHandler() func(w http.ResponseWriter, req *http.Request) {
-	return func(w http.ResponseWriter, req *http.Request) {
-		r.reverseProxy(w, req)
-	}
-}
-
 func (r *roundRobin) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	r.reverseProxy(w, req)

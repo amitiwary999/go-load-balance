@@ -1,36 +1,34 @@
-package loadbalancerweightroundrobin
+package loadbalancerrandom
 
 import (
 	lb "balanceload/load-balancer"
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
-	"sync/atomic"
 )
 
-type WeightRoundRobin struct {
+type random struct {
 	counter uint64
 	urls    []string
 }
 
-func NewWeightRoundRobin(config *lb.Config) *WeightRoundRobin {
+func NewRandom(config *lb.Config) *random {
 	var urls []string
-
 	for _, b := range config.Backends {
-		for i := 0; i < int(b.Weight); i++ {
-			urls = append(urls, b.URL)
-		}
+		urls = append(urls, b.URL)
 	}
-
-	return &WeightRoundRobin{
+	return &random{
 		urls: urls,
 	}
 }
 
-func (r *WeightRoundRobin) reverseProxy(w http.ResponseWriter, req *http.Request) error {
-	counter := atomic.AddUint64(&r.counter, 1)
-	url := r.urls[counter%uint64(len(r.urls))]
+func (r *random) reverseProxy(w http.ResponseWriter, req *http.Request) error {
+	if len(r.urls) == 0 {
+		return errors.New("no server url")
+	}
+	url := r.urls[rand.Intn(len(r.urls))]
 	completeUrl := fmt.Sprintf("%s%s", url, req.RequestURI)
 	proxyReq, err := http.NewRequest(req.Method, completeUrl, req.Body)
 	if err != nil {
@@ -51,12 +49,12 @@ func (r *WeightRoundRobin) reverseProxy(w http.ResponseWriter, req *http.Request
 	return nil
 }
 
-func (r *WeightRoundRobin) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (r *random) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	r.reverseProxy(w, req)
 }
 
-func (r *WeightRoundRobin) serverError(w http.ResponseWriter, err string) {
+func (r *random) serverError(w http.ResponseWriter, err string) {
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte(err))
 }

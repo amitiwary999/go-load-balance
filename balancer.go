@@ -2,6 +2,7 @@ package main
 
 import (
 	lb "balanceload/load-balancer"
+	random "balanceload/load-balancer/balance-algorithm/random"
 	rr "balanceload/load-balancer/balance-algorithm/round-robin"
 	wrr "balanceload/load-balancer/balance-algorithm/weight-round-robin"
 	"fmt"
@@ -15,6 +16,8 @@ func main() {
 		handler = wrr.NewWeightRoundRobin(lb.ParseConfig())
 	} else if lb.ParseConfig().AlgoType == "round-robin" {
 		handler = rr.NewRoundRobin(lb.ParseConfig())
+	} else if lb.ParseConfig().AlgoType == "random" {
+		handler = random.NewRandom(lb.ParseConfig())
 	}
 	s := &http.Server{
 		Handler: handler,
