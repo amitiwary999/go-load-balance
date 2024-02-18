@@ -10,7 +10,7 @@ import (
 type ProxyFunc func(url string) IProxy
 
 type IProxy interface {
-	reverseProxy(w http.ResponseWriter, req *http.Request, url string) error
+	ReverseProxy(w http.ResponseWriter, req *http.Request) error
 	serverError(w http.ResponseWriter, err string)
 }
 
@@ -29,8 +29,8 @@ func (r *Proxy) serverError(w http.ResponseWriter, err string) {
 	w.Write([]byte(err))
 }
 
-func (r *Proxy) reverseProxy(w http.ResponseWriter, req *http.Request, url string) error {
-	completeUrl := fmt.Sprintf("%s%s", url, req.RequestURI)
+func (r *Proxy) ReverseProxy(w http.ResponseWriter, req *http.Request) error {
+	completeUrl := fmt.Sprintf("%s%s", r.backendUrl, req.RequestURI)
 	proxyReq, err := http.NewRequest(req.Method, completeUrl, req.Body)
 	if err != nil {
 		r.serverError(w, err.Error())
