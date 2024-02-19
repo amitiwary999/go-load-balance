@@ -14,9 +14,9 @@ import (
 func main() {
 	var handler http.Handler
 	if lb.ParseConfig().AlgoType == "w-round-robin" {
-		handler = wrr.NewWeightRoundRobin(lb.ParseConfig())
+		handler = wrr.NewWeightRoundRobin(lb.ParseConfig(), proxy.NewProxy)
 	} else if lb.ParseConfig().AlgoType == "round-robin" {
-		handler = rr.NewRoundRobin(lb.ParseConfig())
+		handler = rr.NewRoundRobin(lb.ParseConfig(), proxy.NewProxy)
 	} else if lb.ParseConfig().AlgoType == "random" {
 		handler = random.NewRandom(lb.ParseConfig(), proxy.NewProxy)
 	}

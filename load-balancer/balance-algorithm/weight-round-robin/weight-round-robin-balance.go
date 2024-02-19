@@ -2,61 +2,36 @@ package loadbalancerweightroundrobin
 
 import (
 	lb "balanceload/load-balancer"
-	"errors"
-	"fmt"
-	"io"
+	proxy "balanceload/load-balancer/proxy"
 	"net/http"
 	"sync/atomic"
 )
 
-type WeightRoundRobin struct {
+type weightRoundRobin struct {
 	counter uint64
-	urls    []string
+	urls    []proxy.IProxy
 }
 
-func NewWeightRoundRobin(config *lb.Config) *WeightRoundRobin {
-	var urls []string
+func NewWeightRoundRobin(config *lb.Config, proxyFunc proxy.ProxyFunc) *weightRoundRobin {
+	var urls []proxy.IProxy
 
 	for _, b := range config.Backends {
 		for i := 0; i < int(b.Weight); i++ {
-			urls = append(urls, b.URL)
+			urls = append(urls, proxyFunc(b.URL))
 		}
 	}
 
-	return &WeightRoundRobin{
+	return &weightRoundRobin{
 		urls: urls,
 	}
 }
 
-func (r *WeightRoundRobin) reverseProxy(w http.ResponseWriter, req *http.Request) error {
+func (r *weightRoundRobin) serve(w http.ResponseWriter, req *http.Request) {
 	counter := atomic.AddUint64(&r.counter, 1)
-	url := r.urls[counter%uint64(len(r.urls))]
-	completeUrl := fmt.Sprintf("%s%s", url, req.RequestURI)
-	proxyReq, err := http.NewRequest(req.Method, completeUrl, req.Body)
-	if err != nil {
-		r.serverError(w, err.Error())
-		return errors.New("failed to create request")
-	}
-	proxyReq.Header = req.Header
-	client := &http.Client{}
-	resp, respErr := client.Do(proxyReq)
-	if respErr != nil {
-		r.serverError(w, respErr.Error())
-		fmt.Printf("response error %s\n", respErr)
-		return respErr
-	}
-	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
-	resp.Body.Close()
-	return nil
+	r.urls[counter%uint64(len(r.urls))].ReverseProxy(w, req)
 }
 
-func (r *WeightRoundRobin) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (r *weightRoundRobin) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
-	r.reverseProxy(w, req)
-}
-
-func (r *WeightRoundRobin) serverError(w http.ResponseWriter, err string) {
-	w.WriteHeader(http.StatusInternalServerError)
-	w.Write([]byte(err))
+	r.serve(w, req)
 }
