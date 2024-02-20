@@ -7,24 +7,29 @@ import (
 	"sync/atomic"
 )
 
+type backendServer struct {
+	url           proxy.IProxy
+	isServerAlive bool
+}
+
 type roundRobin struct {
 	counter uint64
-	urls    []proxy.IProxy
+	urls    []*backendServer
 }
 
 func NewRoundRobin(config *lb.Config, proxyFunc proxy.ProxyFunc) *roundRobin {
-	var urls []proxy.IProxy
+	var backendServers []*backendServer
 	for _, b := range config.Backends {
-		urls = append(urls, proxyFunc(b.URL))
+		backendServers = append(backendServers, &backendServer{url: proxyFunc(b.URL), isServerAlive: true})
 	}
 	return &roundRobin{
-		urls: urls,
+		urls: backendServers,
 	}
 }
 
 func (r *roundRobin) serve(w http.ResponseWriter, req *http.Request) {
 	counter := atomic.AddUint64(&r.counter, 1)
-	r.urls[counter%uint64(len(r.urls))].ReverseProxy(w, req)
+	r.urls[counter%uint64(len(r.urls))].url.ReverseProxy(w, req)
 }
 
 func (r *roundRobin) ServeHTTP(w http.ResponseWriter, req *http.Request) {
