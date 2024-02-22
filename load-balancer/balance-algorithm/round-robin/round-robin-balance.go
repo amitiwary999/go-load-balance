@@ -22,6 +22,7 @@ type roundRobin struct {
 
 func NewRoundRobin(config *lb.Config, proxyFunc proxy.ProxyFunc) *roundRobin {
 	rr := &roundRobin{}
+	rr.backendServerMap = make(map[string]*backendServer)
 	var backendServers []*backendServer
 	for i, b := range config.Backends {
 		mapKey := b.URL + strconv.Itoa(i)
@@ -46,7 +47,7 @@ func (r *roundRobin) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 func (r *roundRobin) healthChecker(config *lb.Config) {
 	for {
-		time.Sleep(time.Duration(30 * time.Second))
+		time.Sleep(time.Duration(10 * time.Second))
 		r.serverHealthCheck(config)
 	}
 }
@@ -57,6 +58,23 @@ func (r *roundRobin) serverHealthCheck(config *lb.Config) {
 		ok := lb.IsServerAlive(b.URL)
 		if !ok && r.backendServerMap[mapKey].isServerAlive {
 			r.backendServerMap[mapKey].isServerAlive = false
+			r.urls = resizeServer(r.backendServerMap[mapKey], r.urls)
+		} else if ok && !r.backendServerMap[mapKey].isServerAlive {
+			r.backendServerMap[mapKey].isServerAlive = true
+			r.urls = resizeServer(r.backendServerMap[mapKey], r.urls)
 		}
 	}
+	if len(r.urls) <= 0 {
+		panic("none of the server is live")
+	}
+}
+
+func resizeServer(b *backendServer, bs []*backendServer) []*backendServer {
+	rs := bs
+	for i, bsp := range bs {
+		if bsp == b {
+			rs = append(bs[:i], bs[i+1:]...)
+		}
+	}
+	return rs
 }
