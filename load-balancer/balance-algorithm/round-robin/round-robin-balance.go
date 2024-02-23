@@ -61,7 +61,7 @@ func (r *roundRobin) serverHealthCheck(config *lb.Config) {
 			r.urls = resizeServer(r.backendServerMap[mapKey], r.urls)
 		} else if ok && !r.backendServerMap[mapKey].isServerAlive {
 			r.backendServerMap[mapKey].isServerAlive = true
-			r.urls = resizeServer(r.backendServerMap[mapKey], r.urls)
+			r.urls = append(r.urls, r.backendServerMap[mapKey])
 		}
 	}
 	if len(r.urls) <= 0 {
@@ -74,6 +74,7 @@ func resizeServer(b *backendServer, bs []*backendServer) []*backendServer {
 	for i, bsp := range bs {
 		if bsp == b {
 			rs = append(bs[:i], bs[i+1:]...)
+			break
 		}
 	}
 	return rs
