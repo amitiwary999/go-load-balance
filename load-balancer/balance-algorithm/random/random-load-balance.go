@@ -35,6 +35,11 @@ func NewRandom(config *lb.Config, proxyFunc proxy.ProxyFunc) *random {
 }
 
 func (r *random) serve(w http.ResponseWriter, req *http.Request) {
+	if len(r.urls) == 0 {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("none of the server is live"))
+		return
+	}
 	r.urls[rand.Intn(len(r.urls))].url.ReverseProxy(w, req)
 }
 

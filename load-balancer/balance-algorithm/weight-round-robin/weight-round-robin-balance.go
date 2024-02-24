@@ -38,6 +38,11 @@ func NewWeightRoundRobin(config *lb.Config, proxyFunc proxy.ProxyFunc) *weightRo
 }
 
 func (r *weightRoundRobin) serve(w http.ResponseWriter, req *http.Request) {
+	if len(r.urls) == 0 {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("none of the server is live"))
+		return
+	}
 	counter := atomic.AddUint64(&r.counter, 1)
 	r.urls[counter%uint64(len(r.urls))].url.ReverseProxy(w, req)
 }
