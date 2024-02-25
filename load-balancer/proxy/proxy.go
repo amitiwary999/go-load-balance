@@ -1,6 +1,7 @@
 package loadbalancerproxy
 
 import (
+	lb "balanceload/load-balancer"
 	"errors"
 	"fmt"
 	"io"
@@ -36,6 +37,7 @@ func (r *Proxy) ReverseProxy(w http.ResponseWriter, req *http.Request) error {
 		r.serverError(w, err.Error())
 		return errors.New("failed to create request")
 	}
+	removeHopHeaders(req)
 	proxyReq.Header = req.Header
 	client := &http.Client{}
 	resp, respErr := client.Do(proxyReq)
@@ -44,8 +46,26 @@ func (r *Proxy) ReverseProxy(w http.ResponseWriter, req *http.Request) error {
 		fmt.Printf("response error %s\n", respErr)
 		return respErr
 	}
+	removeResHopHeader(resp)
 	w.WriteHeader(resp.StatusCode)
+	for h, vs := range resp.Header {
+		for _, v := range vs {
+			w.Header().Set(h, v)
+		}
+	}
 	io.Copy(w, resp.Body)
 	resp.Body.Close()
 	return nil
+}
+
+func removeHopHeaders(req *http.Request) {
+	for _, h := range lb.HopHeaders {
+		req.Header.Del(h)
+	}
+}
+
+func removeResHopHeader(resp *http.Response) {
+	for _, h := range lb.HopHeaders {
+		resp.Header.Del(h)
+	}
 }
