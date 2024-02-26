@@ -1,6 +1,8 @@
 package loadbalancer
 
-import "net/http"
+import (
+	"net/http"
+)
 
 var HopHeaders = []string{
 	"Connection",

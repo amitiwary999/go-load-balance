@@ -37,7 +37,7 @@ func (r *Proxy) ReverseProxy(w http.ResponseWriter, req *http.Request) error {
 		r.serverError(w, err.Error())
 		return errors.New("failed to create request")
 	}
-	removeHopHeaders(req)
+	updateHeaders(req)
 	proxyReq.Header = req.Header
 	client := &http.Client{}
 	resp, respErr := client.Do(proxyReq)
@@ -58,10 +58,11 @@ func (r *Proxy) ReverseProxy(w http.ResponseWriter, req *http.Request) error {
 	return nil
 }
 
-func removeHopHeaders(req *http.Request) {
+func updateHeaders(req *http.Request) {
 	for _, h := range lb.HopHeaders {
 		req.Header.Del(h)
 	}
+	req.Header.Set("X-Forwarded-For", req.RemoteAddr)
 }
 
 func removeResHopHeader(resp *http.Response) {

@@ -3,6 +3,7 @@ package loadbalanceroundrobin
 import (
 	lb "balanceload/load-balancer"
 	proxy "balanceload/load-balancer/proxy"
+	"fmt"
 	"net/http"
 	"strconv"
 	"sync/atomic"
@@ -60,7 +61,8 @@ func (r *roundRobin) healthChecker(config *lb.Config) {
 func (r *roundRobin) serverHealthCheck(config *lb.Config) {
 	for i, b := range config.Backends {
 		mapKey := b.URL + strconv.Itoa(i)
-		ok := lb.IsServerAlive(b.URL)
+		healthUrl := fmt.Sprintf("%v%v", b.URL, b.Health)
+		ok := lb.IsServerAlive(healthUrl)
 		if !ok && r.backendServerMap[mapKey].isServerAlive {
 			r.backendServerMap[mapKey].isServerAlive = false
 			r.urls = resizeServer(r.backendServerMap[mapKey], r.urls)
