@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
 
 type ProxyFunc func(url string) IProxy
@@ -39,7 +40,15 @@ func (r *Proxy) ReverseProxy(w http.ResponseWriter, req *http.Request) error {
 	}
 	updateHeaders(req)
 	proxyReq.Header = req.Header
-	client := &http.Client{}
+
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.MaxIdleConns = 100
+	t.MaxConnsPerHost = 100
+	t.MaxIdleConnsPerHost = 100
+	client := &http.Client{
+		Transport: t,
+		Timeout:   60 * time.Second,
+	}
 	resp, respErr := client.Do(proxyReq)
 	if respErr != nil {
 		r.serverError(w, respErr.Error())
