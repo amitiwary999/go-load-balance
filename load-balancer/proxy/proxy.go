@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync/atomic"
 	"time"
 )
 
@@ -14,10 +15,12 @@ type ProxyFunc func(url string) IProxy
 type IProxy interface {
 	ReverseProxy(w http.ResponseWriter, req *http.Request) error
 	serverError(w http.ResponseWriter, err string)
+	PendingRequests() int32
 }
 
 type Proxy struct {
-	backendUrl string
+	backendUrl  string
+	pendingConn int32
 }
 
 func NewProxy(url string) IProxy {
@@ -29,6 +32,10 @@ func NewProxy(url string) IProxy {
 func (r *Proxy) serverError(w http.ResponseWriter, err string) {
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte(err))
+}
+
+func (r *Proxy) PendingRequests() int32 {
+	return r.pendingConn
 }
 
 func (r *Proxy) ReverseProxy(w http.ResponseWriter, req *http.Request) error {
@@ -49,6 +56,7 @@ func (r *Proxy) ReverseProxy(w http.ResponseWriter, req *http.Request) error {
 		Transport: t,
 		Timeout:   60 * time.Second,
 	}
+	atomic.AddInt32(&r.pendingConn, 1)
 	resp, respErr := client.Do(proxyReq)
 	if respErr != nil {
 		r.serverError(w, respErr.Error())
@@ -64,6 +72,7 @@ func (r *Proxy) ReverseProxy(w http.ResponseWriter, req *http.Request) error {
 	}
 	io.Copy(w, resp.Body)
 	resp.Body.Close()
+	atomic.AddInt32(&r.pendingConn, -1)
 	return nil
 }
 
