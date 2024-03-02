@@ -1,0 +1,10 @@
+{
+    "algoType": "type of algo(round-robin, w-round-robin, random",
+    "backends": [
+      {
+        "url": "base url of the upstream server",
+        "health": "health endpoint of server",
+        "weight": 3
+      }
+    ]
+  }
