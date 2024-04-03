@@ -1,14 +1,15 @@
 package main
 
 import (
-	lb "balanceload/load-balancer"
-	random "balanceload/load-balancer/balance-algorithm/random"
-	rr "balanceload/load-balancer/balance-algorithm/round-robin"
-	wrr "balanceload/load-balancer/balance-algorithm/weight-round-robin"
-	proxy "balanceload/load-balancer/proxy"
 	"fmt"
 	"net"
 	"net/http"
+
+	lb "github.com/amitiwary999/go-load-balance/load-balancer"
+	random "github.com/amitiwary999/go-load-balance/load-balancer/balance-algorithm/random"
+	rr "github.com/amitiwary999/go-load-balance/load-balancer/balance-algorithm/round-robin"
+	wrr "github.com/amitiwary999/go-load-balance/load-balancer/balance-algorithm/weight-round-robin"
+	proxy "github.com/amitiwary999/go-load-balance/load-balancer/proxy"
 )
 
 func main() {

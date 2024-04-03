@@ -1,11 +1,12 @@
 package loadbalanceleastused
 
 import (
-	lb "balanceload/load-balancer"
-	proxy "balanceload/load-balancer/proxy"
 	"net/http"
 	"strconv"
 	"time"
+
+	lb "github.com/amitiwary999/go-load-balance/load-balancer"
+	proxy "github.com/amitiwary999/go-load-balance/load-balancer/proxy"
 )
 
 type backendServer struct {

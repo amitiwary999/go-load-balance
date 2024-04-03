@@ -1,13 +1,14 @@
 package loadbalancerproxy
 
 import (
-	lb "balanceload/load-balancer"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"sync/atomic"
 	"time"
+
+	lb "github.com/amitiwary999/go-load-balance/load-balancer"
 )
 
 type ProxyFunc func(url string) IProxy
