@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	fmt.Printf("server main %v\n", lb.ParseConfig().AlgoType)
 	var handler http.Handler
 	if lb.ParseConfig().AlgoType == "w-round-robin" {
 		handler = wrr.NewWeightRoundRobin(lb.ParseConfig(), proxy.NewProxy)
@@ -21,12 +22,15 @@ func main() {
 	} else if lb.ParseConfig().AlgoType == "random" {
 		handler = random.NewRandom(lb.ParseConfig(), proxy.NewProxy)
 	}
+	fmt.Printf("server setup")
 	s := &http.Server{
 		Handler: handler,
 	}
 	l, err := net.Listen("tcp4", ":8000")
 	if err != nil {
 		fmt.Printf("listener failed %v", err)
+	} else {
+		fmt.Printf("server connected")
 	}
 	s.Serve(l)
 }
